@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Carino Multiviewer — Live News Wall</title>
+  <meta name="description" content="Watch many live news streams from around the world at once. Add YouTube or any embeddable stream, organize by country, and share your wall with a link.">
+  <link rel="icon" href="logo.svg" type="image/svg+xml">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;700&family=IBM+Plex+Sans:wght@300;400;500;700&family=Red+Hat+Display:wght@700;900&display=swap" rel="stylesheet">
+  <link href="css/styles.css" rel="stylesheet">
+</head>
+<body class="sidebar-open">
+
+  <!-- ============================ Carino navbar ============================ -->
+  <header class="top-header">
+    <div class="header-left">
+      <a class="brand-name" href="https://carino.systems/" title="Carino Systems — back to hub">
+        Carino<span class="app-tag">Multiviewer</span>
+      </a>
+      <div class="header-clock" aria-hidden="true">
+        <span class="clock-time" id="clockLocal">00:00:00</span>
+        <span class="clock-tz" id="tzName">UTC</span>
+        <span class="brand-greeting" id="greeting">System Ready.</span>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <div class="social-row">
+        <a href="https://github.com/MiguelCarino" target="_blank" rel="noopener" class="icon-btn" title="GitHub">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
+        </a>
+        <a href="https://www.linkedin.com/in/miguelcarino94/" target="_blank" rel="noopener" class="icon-btn" title="LinkedIn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
+        </a>
+      </div>
+      <button class="status-toggle" id="diagToggle" title="System status" aria-label="System status" aria-haspopup="true" aria-expanded="false" aria-controls="diagBox">
+        <span>Sys. Status</span><div class="pulse-dot"></div>
+      </button>
+    </div>
+
+    <!-- Diagnostics dropdown -->
+    <div class="diag-dropdown" id="diagBox">
+      <div class="diag-section">Wall</div>
+      <div class="diag-row"><span class="diag-lbl">Active streams</span><span class="diag-val" id="diagActive">0</span></div>
+      <div class="diag-row"><span class="diag-lbl">In catalog</span><span class="diag-val" id="diagTotal">0</span></div>
+      <div class="diag-row"><span class="diag-lbl">Custom added</span><span class="diag-val" id="diagCustom">0</span></div>
+      <div class="diag-section">YouTube API</div>
+      <div class="diag-row"><span class="diag-lbl">Data API key</span><span class="diag-val" id="diagApi">Not set</span></div>
+      <div class="diag-row"><span class="diag-lbl">Live detection</span><span class="diag-val" id="diagLive">Embed fallback</span></div>
+      <div class="diag-section">Session</div>
+      <div class="diag-row"><span class="diag-lbl">Layout</span><span class="diag-val" id="diagLayout">Big</span></div>
+      <div class="diag-row"><span class="diag-lbl">Local time</span><span class="diag-val" id="diagClock">--:--:--</span></div>
+    </div>
+  </header>
+
+  <!-- ============================ App body ============================ -->
+  <div class="app-body">
+
+    <!-- ----- Sidebar / Control Room ----- -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-head">
+        <div class="sidebar-title"><span class="dot"></span> Control Room</div>
+
+        <div class="search-box" id="searchBox">
+          <span class="search-ico" aria-hidden="true">⌕</span>
+          <input type="text" id="search" placeholder="Search channels…" aria-label="Search channels" autocomplete="off" spellcheck="false">
+          <button class="search-clear" id="searchClear" title="Clear" aria-label="Clear search">×</button>
+        </div>
+
+        <div class="sidebar-actions">
+          <button class="btn btn-accent flex1" id="addBtn" title="Register a YouTube or any embeddable stream">＋ Add stream</button>
+          <button class="btn btn-ghost" id="iptvBtn" title="Import an IPTV / M3U playlist">📡 IPTV</button>
+          <button class="btn btn-ghost" id="settingsBtn" title="Settings (YouTube API key, import/export)">⚙</button>
+        </div>
+        <div class="sidebar-actions">
+          <button class="btn btn-ghost flex1" id="shareBtn" title="Copy a link that reopens this exact wall">🔗 Share wall</button>
+          <button class="btn btn-ghost flex1" id="clearBtn" title="Turn off all streams">⨯ Clear all</button>
+        </div>
+      </div>
+
+      <div class="sidebar-scroll" id="sidebarScroll">
+        <!-- Active strip -->
+        <div class="active-strip" id="activeStrip" hidden>
+          <div class="strip-head"><span>On air</span><span class="count" id="activeCount">0</span></div>
+          <div class="active-chips" id="activeChips"></div>
+        </div>
+        <!-- Category groups injected here -->
+        <div id="catalog"></div>
+        <div class="no-results" id="noResults" hidden>No channels match your search.</div>
+      </div>
+    </aside>
+
+    <!-- ----- Stage ----- -->
+    <main class="stage" id="stage">
+      <div class="toolbar">
+        <button class="sb-toggle" id="sbToggle" title="Toggle Control Room" aria-label="Toggle Control Room">☰</button>
+        <span class="tb-label" id="onAirLabel">No streams on air</span>
+        <div class="spacer"></div>
+        <span class="tb-label">Layout</span>
+        <div class="layout-seg" id="layoutSeg" role="group" aria-label="Layout mode">
+          <button data-mode="grid"   class="active" aria-label="Grid — fill the screen" aria-pressed="true"  title="Fill the screen, every stream visible (no scroll)">Grid</button>
+          <button data-mode="focus"  aria-label="Focus / spotlight"  aria-pressed="false" title="One main stream, the rest on the side & below">Focus</button>
+          <button data-mode="motion" aria-label="Motion wall"        aria-pressed="false" title="Auto-scrolling wall of channels">Motion</button>
+        </div>
+        <div class="focus-controls" id="focusControls">
+          <button class="btn btn-ghost" id="focusAutoBtn" title="Rotate the spotlight through every stream automatically">⟳ Auto-rotate</button>
+        </div>
+        <div class="motion-controls" id="motionControls">
+          <button class="btn btn-ghost" id="motionSource" title="Show all channels, or only the ones on air">All channels</button>
+          <button class="btn btn-ghost" id="motionPause" title="Pause / resume auto-scroll">⏸ Pause</button>
+        </div>
+        <button class="btn btn-ghost" id="muteAllBtn" title="Mute / unmute every tile">🔊 Mute all</button>
+      </div>
+
+      <div class="grid-wrap" id="gridWrap">
+        <div class="grid" id="grid"></div>
+        <div class="motion-grid" id="motionGrid" aria-label="Moving channel wall"></div>
+        <div class="empty" id="empty">
+          <img src="logo.svg" class="em-logo" alt="">
+          <h2>Your wall is empty</h2>
+          <p>Pick channels from the <strong>Control Room</strong> on the left to start watching,
+             or hit <span class="em-kbd">＋ Add stream</span> to register any YouTube live or
+             embeddable URL. Your selection is saved and can be shared with a link.</p>
+          <button class="btn btn-accent" id="emptyAddBtn">＋ Add your first stream</button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ============================ Add-stream modal ============================ -->
+  <div class="modal-overlay" id="addModal">
+    <div class="modal">
+      <div class="modal-head">
+        <h3>Add a stream</h3>
+        <button class="close" data-close>×</button>
+      </div>
+      <div class="modal-body">
+        <div class="field">
+          <label for="f-url">Stream URL</label>
+          <input type="text" id="f-url" placeholder="https://www.youtube.com/watch?v=…  ·  youtube.com/@handle  ·  twitch.tv/…  ·  any embed URL">
+          <div class="detected" id="f-detected"></div>
+          <div class="hint">Paste a YouTube video/live, channel, or <em>@handle</em>; a Twitch/VK/Rutube/Odysee link; an <code>.m3u8</code> HLS/IPTV stream; or any page that allows embedding. For a whole IPTV playlist, use <strong>📡 IPTV</strong> instead.</div>
+        </div>
+        <div class="field">
+          <label for="f-name">Title</label>
+          <input type="text" id="f-name" placeholder="e.g. France 24 English">
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label for="f-cat">Category</label>
+            <select id="f-cat"></select>
+          </div>
+          <div class="field">
+            <label for="f-newcat">…or new category</label>
+            <input type="text" id="f-newcat" placeholder="e.g. Spain">
+          </div>
+        </div>
+        <div class="field">
+          <label for="f-logo">Logo URL (optional)</label>
+          <input type="text" id="f-logo" placeholder="Leave blank to auto-use the YouTube thumbnail / initials">
+        </div>
+        <div class="field">
+          <label for="f-note">Note badge (optional)</label>
+          <input type="text" id="f-note" placeholder="e.g. Not 24/7">
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost" data-close>Cancel</button>
+        <button class="btn btn-accent" id="addSave">Add &amp; play</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================ Settings modal ============================ -->
+  <div class="modal-overlay" id="settingsModal">
+    <div class="modal">
+      <div class="modal-head">
+        <h3>Settings</h3>
+        <button class="close" data-close>×</button>
+      </div>
+      <div class="modal-body">
+        <div class="field">
+          <label for="f-apikey">YouTube Data API key (optional)</label>
+          <input type="password" id="f-apikey" placeholder="AIza…" autocomplete="off">
+          <div class="hint">
+            <strong>Recommended for reliable playback.</strong> With a key the app resolves each
+            channel's actual live video, detects whether it is <strong>live</strong>, and shows the
+            real title &amp; thumbnail (and resolves <em>@handles</em>).
+            Without a key, channels use YouTube's legacy <code>live_stream</code> embed, which only
+            renders while a channel is actually live and may otherwise show “unavailable”.
+            Get one free at the <a href="https://console.cloud.google.com/apis/library/youtube.googleapis.com" target="_blank" rel="noopener">Google Cloud Console</a> (enable “YouTube Data API v3”).
+            Stored only in this browser.
+          </div>
+        </div>
+        <div class="field">
+          <label><input type="checkbox" id="f-remember" style="width:auto;margin-right:8px"> Remember active streams between visits</label>
+        </div>
+        <div class="field">
+          <label>Backup</label>
+          <div class="sidebar-actions">
+            <button class="btn flex1" id="exportBtn">⬇ Export config</button>
+            <button class="btn flex1" id="importBtn">⬆ Import config</button>
+            <input type="file" id="importFile" accept="application/json" hidden>
+          </div>
+          <div class="hint">Exports your custom channels and settings as a JSON file.</div>
+        </div>
+        <div class="field">
+          <label>Reset</label>
+          <button class="btn btn-ghost" id="resetBtn">Reset custom channels &amp; settings</button>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost" data-close>Close</button>
+        <button class="btn btn-accent" id="settingsSave">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================ IPTV / M3U modal ============================ -->
+  <div class="modal-overlay" id="iptvModal">
+    <div class="modal">
+      <div class="modal-head">
+        <h3>Import IPTV / M3U playlist</h3>
+        <button class="close" data-close>×</button>
+      </div>
+      <div class="modal-body">
+        <div class="field">
+          <label for="iptv-url">Playlist URL (.m3u / .m3u8)</label>
+          <input type="text" id="iptv-url" placeholder="https://example.com/playlist.m3u8">
+          <div class="hint">
+            Loads every channel in the playlist into the Control Room. HLS streams play via
+            <code>hls.js</code>. Many providers block cross-origin fetches (CORS) — if the URL
+            fails, download the file and use “Import file” below. Public country playlists:
+            <a href="https://github.com/iptv-org/iptv" target="_blank" rel="noopener">iptv-org</a>.
+          </div>
+        </div>
+        <div class="field">
+          <label for="iptv-cat">Fallback category</label>
+          <input type="text" id="iptv-cat" placeholder="IPTV (used when the playlist has no group-title)">
+        </div>
+        <div class="field">
+          <label>Or import a local file</label>
+          <button class="btn" id="iptvPickFile">⬆ Import .m3u file…</button>
+          <input type="file" id="iptvFile" accept=".m3u,.m3u8,audio/x-mpegurl,application/vnd.apple.mpegurl" hidden>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost" data-close>Cancel</button>
+        <button class="btn btn-accent" id="iptvImportUrl">Import from URL</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="js/catalog.js?v=3"></script>
+  <script src="js/app.js?v=3"></script>
+</body>
+</html>
