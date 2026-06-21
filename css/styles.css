@@ -307,41 +307,80 @@ body.sidebar-collapsed .sidebar { margin-left: calc(var(--sidebar-w) * -1); }
 .layout-seg button:hover { color: var(--accent); }
 .layout-seg button.active { background: var(--accent); color: #000; font-weight: 700; }
 
+/* Single mode: ‹ prev / next › channel stepper */
+.single-controls { display: none; align-items: center; gap: 4px; }
+body.mode-single .single-controls { display: flex; }
+.single-controls .btn { padding: 6px 10px; font-size: .95rem; line-height: 1; }
+.single-label {
+  font-family: var(--mono); font-size: .72rem; color: var(--text-sec);
+  padding: 0 6px; max-width: 220px; white-space: nowrap; overflow: hidden;
+  text-overflow: ellipsis; text-align: center;
+}
+
 .grid-wrap { flex: 1; overflow: hidden; padding: var(--tile-gap); min-height: 0; position: relative; }
 .grid { display: grid; gap: var(--tile-gap); height: 100%; }
 
 /* Focus mode: highlight the spotlight tile */
 .tile.tile-main { outline: 2px solid var(--accent); outline-offset: -2px; }
 
-/* Motion mode: auto-scrolling wall of channel cards */
+/* Motion mode: auto-scrolling wall of LIVE channel tiles (streams play in-place,
+   lazily mounted as each card scrolls into view) */
 .motion-grid {
   display: none; height: 100%; overflow-y: auto; align-content: start;
-  grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
-  grid-auto-rows: 138px;   /* fixed rows so the wall overflows & auto-scrolls */
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-auto-rows: 150px;   /* fixed ~16:9 rows so the wall overflows & auto-scrolls */
   gap: var(--tile-gap);
 }
 .motion-controls, .focus-controls { display: none; gap: 6px; }
-body.is-motion .motion-controls { display: flex; }
-body.mode-focus .focus-controls { display: flex; }
-body.is-motion #muteAllBtn { display: none; }
+body.mode-motion .motion-controls { display: flex; }
+body.mode-focus .focus-controls, body.mode-single .focus-controls { display: flex; }
+body.mode-motion #muteAllBtn { display: none; }
 .btn.on { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 700; }
 
 .m-card {
   position: relative; border: 1px solid var(--border); border-radius: 8px;
-  overflow: hidden; cursor: pointer; background: var(--bg-card); transition: .15s;
-  display: flex; flex-direction: column;
+  overflow: hidden; background: #000; transition: border-color .15s, box-shadow .15s;
 }
-.m-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,.5); }
+.m-card:hover { border-color: var(--accent); box-shadow: 0 6px 18px rgba(0,0,0,.5); }
 .m-card.on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-glow); }
-.m-poster { flex: 1; min-height: 0; position: relative; display: flex; align-items: center; justify-content: center; }
-.m-poster img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.m-poster span { font-family: var(--display); font-weight: 900; font-size: 1.5rem; color: #fff; opacity: .85; }
-.m-info { padding: 7px 9px; }
-.m-info .m-nm { font-size: .82rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.m-info .m-ds { font-size: .68rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.m-badge { position: absolute; top: 6px; left: 6px; font-family: var(--mono); font-size: .56rem; text-transform: uppercase; background: var(--accent); color: #000; border-radius: 3px; padding: 2px 5px; font-weight: 700; }
-.m-state { position: absolute; top: 6px; right: 6px; font-family: var(--mono); font-size: .58rem; font-weight: 700; background: rgba(0,0,0,.7); color: var(--text); border-radius: 3px; padding: 2px 6px; }
+/* media area (poster placeholder + the live embed that covers it) */
+.m-media { position: absolute; inset: 0; }
+.m-poster { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: var(--bg-card); transition: opacity .25s; }
+.m-poster img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .9; }
+.m-poster span { font-family: var(--display); font-weight: 900; font-size: 1.6rem; color: #fff; opacity: .85; }
+.m-media iframe, .m-media video { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #000; z-index: 1; }
+.m-media video { object-fit: contain; }
+.m-card.playing .m-poster { opacity: 0; }   /* fade out the placeholder once the stream is up */
+/* overlay controls (revealed on hover / focus) */
+.m-overlay {
+  position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column;
+  justify-content: space-between; opacity: 0; transition: opacity .15s; pointer-events: none;
+}
+.m-card:hover .m-overlay, .m-card:focus-within .m-overlay { opacity: 1; }
+.m-overlay button { pointer-events: auto; }
+.m-bar {
+  display: flex; align-items: center; gap: 6px; padding: 6px 8px;
+  background: linear-gradient(180deg, rgba(0,0,0,.85) 0%, rgba(0,0,0,0) 100%);
+}
+.m-bar .m-nm { flex: 1; font-size: .78rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 3px #000; }
+.m-bar .m-pop {
+  width: 24px; height: 24px; border: none; border-radius: 5px; cursor: pointer; flex-shrink: 0;
+  background: rgba(20,20,20,.85); color: var(--text); font-size: .78rem;
+  display: flex; align-items: center; justify-content: center; transition: .12s;
+}
+.m-bar .m-pop:hover { background: var(--accent); color: #000; }
+.m-foot { display: flex; padding: 6px 8px; background: linear-gradient(0deg, rgba(0,0,0,.85) 0%, rgba(0,0,0,0) 100%); }
+.m-add {
+  flex: 1; border: 1px solid var(--accent-dim); border-radius: 6px; cursor: pointer;
+  background: rgba(0,0,0,.6); color: var(--text); font-family: var(--sans);
+  font-size: .76rem; font-weight: 600; padding: 6px 8px; transition: .12s;
+}
+.m-add:hover { border-color: var(--accent); color: var(--accent); }
+.m-card.on .m-add { background: var(--accent); color: #000; border-color: var(--accent); }
+.m-badge { position: absolute; top: 6px; left: 6px; z-index: 3; font-family: var(--mono); font-size: .56rem; text-transform: uppercase; background: var(--accent); color: #000; border-radius: 3px; padding: 2px 5px; font-weight: 700; }
+.m-state { position: absolute; bottom: 6px; left: 6px; z-index: 3; font-family: var(--mono); font-size: .56rem; font-weight: 700; background: rgba(0,0,0,.7); color: var(--text); border-radius: 3px; padding: 2px 6px; }
 .m-card.on .m-state { background: var(--accent); color: #000; }
+.m-card.playing .m-state { display: none; }   /* the live video itself signals it's playing */
 .motion-empty { grid-column: 1 / -1; padding: 40px; text-align: center; color: var(--text-muted); }
 
 /* Tile — fills its grid cell so the whole stage is used */
@@ -450,10 +489,14 @@ body.is-motion #muteAllBtn { display: none; }
   .stage { position: relative; }
   .toolbar { gap: 8px; padding: 0 10px; }
   .toolbar .tb-label { display: none; }   /* hide "Layout" + on-air text; chips/diag still report it */
+  .single-label { max-width: 130px; }     /* keep the toolbar from overflowing */
 }
 @media (max-width: 560px) {
   .brand-name .app-tag { display: none; }
   .status-toggle span { display: none; }
   .status-toggle { padding: 0 10px; }
   #muteAllBtn { padding: 7px 9px; }        /* keep icon + short label */
+  .single-label { max-width: 76px; }
+  /* on phones, drop the (secondary) auto-rotate so the stepper + modes always fit */
+  body.mode-single .focus-controls { display: none; }
 }

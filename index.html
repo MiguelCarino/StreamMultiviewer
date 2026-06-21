@@ -98,16 +98,22 @@
         <div class="spacer"></div>
         <span class="tb-label">Layout</span>
         <div class="layout-seg" id="layoutSeg" role="group" aria-label="Layout mode">
+          <button data-mode="single" aria-label="Single — one channel full screen" aria-pressed="false" title="Watch one channel full screen; step through the rest">Single</button>
           <button data-mode="grid"   class="active" aria-label="Grid — fill the screen" aria-pressed="true"  title="Fill the screen, every stream visible (no scroll)">Grid</button>
           <button data-mode="focus"  aria-label="Focus / spotlight"  aria-pressed="false" title="One main stream, the rest on the side & below">Focus</button>
-          <button data-mode="motion" aria-label="Motion wall"        aria-pressed="false" title="Auto-scrolling wall of channels">Motion</button>
+          <button data-mode="motion" aria-label="Motion wall"        aria-pressed="false" title="Auto-scrolling wall of live channels">Motion</button>
+        </div>
+        <div class="single-controls" id="singleControls">
+          <button class="btn btn-ghost" id="singlePrev" title="Previous channel" aria-label="Previous channel">‹</button>
+          <span class="single-label" id="singleLabel" aria-live="polite">—</span>
+          <button class="btn btn-ghost" id="singleNext" title="Next channel" aria-label="Next channel">›</button>
         </div>
         <div class="focus-controls" id="focusControls">
-          <button class="btn btn-ghost" id="focusAutoBtn" title="Rotate the spotlight through every stream automatically">⟳ Auto-rotate</button>
+          <button class="btn btn-ghost" id="focusAutoBtn" aria-label="Auto-rotate the primary channel" aria-pressed="false" title="Rotate through every channel automatically">⟳ Auto-rotate</button>
         </div>
         <div class="motion-controls" id="motionControls">
-          <button class="btn btn-ghost" id="motionSource" title="Show all channels, or only the ones on air">All channels</button>
-          <button class="btn btn-ghost" id="motionPause" title="Pause / resume auto-scroll">⏸ Pause</button>
+          <button class="btn btn-ghost" id="motionSource" aria-label="Toggle the wall source: all channels or on-air only" title="Show all channels, or only the ones on air">All channels</button>
+          <button class="btn btn-ghost" id="motionPause" aria-label="Pause or resume the wall auto-scroll" title="Pause / resume auto-scroll">⏸ Pause</button>
         </div>
         <button class="btn btn-ghost" id="muteAllBtn" title="Mute / unmute every tile">🔊 Mute all</button>
       </div>

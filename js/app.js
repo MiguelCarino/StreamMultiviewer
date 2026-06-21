@@ -27,9 +27,10 @@
   /* ------------------------------------------------------------------ *
    * State
    * ------------------------------------------------------------------ */
-  // Layout modes: grid (fill the stage, no scroll/overflow) · focus (spotlight
-  // with others on the side AND below) · motion (auto-scrolling browse wall).
-  var MODES = { grid: 1, focus: 1, motion: 1 };
+  // Layout modes: single (one channel full screen) · grid (fill the stage, no
+  // scroll/overflow) · focus (spotlight with others on the side AND below) ·
+  // motion (auto-scrolling wall of live channels).
+  var MODES = { single: 1, grid: 1, focus: 1, motion: 1 };
   function migrateMode(v) {
     if (MODES[v]) return v;
     return 'grid';                            // legacy big/fit/auto/1-4 → grid
@@ -538,6 +539,10 @@
 
   // Focus / spotlight: one big "main" tile, with the others wrapped around it in
   // an L — a column on the RIGHT and a row BELOW the main. Click ★ to promote a tile.
+  // Size of the secondary strips relative to a main column/row. Bigger = the
+  // side/bottom companion tiles are larger (the spotlight stays dominant).
+  var FOCUS_SEC = 0.85;     // L-shape right column + bottom row
+  var FOCUS_BESIDE = 0.66;  // lone companion when there's only one other stream
   function layoutFocus(g, ids) {
     var mainId = (state.focusId && ids.indexOf(state.focusId) >= 0) ? state.focusId : ids[0];
     var others = ids.filter(function (id) { return id !== mainId; });
@@ -545,15 +550,15 @@
     var k = others.length;
     if (k === 0) { g.style.gridTemplateColumns = '1fr'; g.style.gridTemplateRows = '1fr'; setPlace(mainId, '1', '1'); return; }
     if (k === 1) {                                   // main + one beside it
-      g.style.gridTemplateColumns = 'minmax(0,1fr) minmax(0,0.55fr)';
+      g.style.gridTemplateColumns = 'minmax(0,1fr) minmax(0,' + FOCUS_BESIDE + 'fr)';
       g.style.gridTemplateRows = '1fr';
       setPlace(mainId, '1', '1'); setPlace(others[0], '2', '1');
       return;
     }
     // L-shape: bottom row + right column, main spans the top-left block
     var botN = Math.ceil(k / 2), sideN = k - botN;   // sideN ≤ botN
-    var cols = []; for (var c = 0; c < botN; c++) cols.push('minmax(0,1fr)'); cols.push('minmax(0,0.55fr)');
-    var rows = []; for (var r = 0; r < sideN; r++) rows.push('minmax(0,1fr)'); rows.push('minmax(0,0.55fr)');
+    var cols = []; for (var c = 0; c < botN; c++) cols.push('minmax(0,1fr)'); cols.push('minmax(0,' + FOCUS_SEC + 'fr)');
+    var rows = []; for (var r = 0; r < sideN; r++) rows.push('minmax(0,1fr)'); rows.push('minmax(0,' + FOCUS_SEC + 'fr)');
     g.style.gridTemplateColumns = cols.join(' ');
     g.style.gridTemplateRows = rows.join(' ');
     setPlace(mainId, '1 / span ' + botN, '1 / span ' + Math.max(sideN, 1));
@@ -567,10 +572,15 @@
     Object.keys(tiles).forEach(function (id) { var t = tiles[id]; t.style.order = ''; t.style.gridColumn = ''; t.style.gridRow = ''; t.classList.remove('tile-main'); });
     document.body.classList.toggle('mode-grid', mode === 'grid');
     document.body.classList.toggle('mode-focus', mode === 'focus');
+    document.body.classList.toggle('mode-single', mode === 'single');
     g.style.gridTemplateColumns = ''; g.style.gridTemplateRows = '';
     if (!ids.length) { $('#diagLayout').textContent = capitalize(mode); return; }
 
-    if (mode === 'focus') {
+    if (mode === 'single') {
+      // one channel, full stage (renderGrid keeps only the primary tile loaded)
+      g.style.gridTemplateColumns = '1fr'; g.style.gridTemplateRows = '1fr';
+      $('#diagLayout').textContent = 'Single' + (state.focusAuto ? ' (auto)' : '');
+    } else if (mode === 'focus') {
       layoutFocus(g, ids);
       $('#diagLayout').textContent = 'Focus' + (state.focusAuto ? ' (auto)' : '');
     } else {
@@ -585,18 +595,49 @@
     }
   }
 
-  /* ---- Focus auto-rotate (spotlight cycles every ~minute) ---- */
+  // The "primary" channel: the spotlight in Focus, the single channel in Single.
+  function currentPrimaryId() {
+    if (state.focusId && state.active.indexOf(state.focusId) >= 0) return state.focusId;
+    return state.active[0] || null;
+  }
+
+  /* ---- Auto-rotate: cycle the primary channel every ~minute (spotlight in
+     Focus, the on-screen channel in Single) ---- */
   var focusTimer = null;
-  function advanceFocus() {
-    if (state.layout !== 'focus' || state.active.length < 2) return;
-    var cur = (state.focusId && state.active.indexOf(state.focusId) >= 0) ? state.focusId : state.active[0];
-    var i = state.active.indexOf(cur);
+  function advancePrimary() {
+    if (state.active.length < 2) return;
+    if (state.layout !== 'focus' && state.layout !== 'single') return;
+    var i = state.active.indexOf(currentPrimaryId());
+    if (i < 0) i = 0;
     state.focusId = state.active[(i + 1) % state.active.length];
-    applyLayout();
+    if (state.layout === 'single') renderGrid();   // swap the single tile
+    else applyLayout();                             // focus: just re-place tiles
   }
   function syncFocusRotate() {
     if (focusTimer) { clearInterval(focusTimer); focusTimer = null; }
-    if (state.layout === 'focus' && state.focusAuto) focusTimer = setInterval(advanceFocus, 60000);
+    if (state.focusAuto && (state.layout === 'focus' || state.layout === 'single')) focusTimer = setInterval(advancePrimary, 60000);
+  }
+  // Step the single-mode channel manually (‹ prev / next ›)
+  function stepSingle(dir) {
+    if (state.layout !== 'single' || state.active.length < 2) return;
+    var n = state.active.length;
+    var i = state.active.indexOf(currentPrimaryId());
+    if (i < 0) i = 0;
+    state.focusId = state.active[((i + dir) % n + n) % n];
+    renderGrid();
+  }
+  function updateSingleControls() {
+    if (state.layout !== 'single') return;
+    var n = state.active.length;
+    var pid = currentPrimaryId();
+    var ch = pid ? byId[pid] : null;
+    var idx = pid ? state.active.indexOf(pid) : -1;
+    var label = $('#singleLabel');
+    if (label) label.textContent = ch ? ((idx + 1) + ' / ' + n + ' · ' + ch.name) : 'No streams on air';
+    var dis = n < 2;
+    var p = $('#singlePrev'), nx = $('#singleNext');
+    if (p) p.disabled = dis;
+    if (nx) nx.disabled = dis;
   }
 
   function updateChromeLabels() {
@@ -610,10 +651,10 @@
     document.body.classList.toggle('mode-motion', motion);
     syncFocusRotate();   // reconcile the auto-rotate timer with the current state on every render
     if (motion) {
-      // browse wall: tear down every live tile (stops audio/CPU/bandwidth)
+      // live wall: tear down the grid's tiles (the wall mounts its own embeds)
       // and keep modes mutually exclusive on <body>
       Object.keys(tiles).forEach(destroyTile);
-      document.body.classList.remove('mode-grid', 'mode-focus');
+      document.body.classList.remove('mode-grid', 'mode-focus', 'mode-single');
       state.motionPaused = false; $('#motionPause').textContent = '⏸ Pause';
       $('#grid').style.display = 'none';
       $('#empty').style.display = 'none';
@@ -624,19 +665,30 @@
       return;
     }
     $('#motionGrid').style.display = 'none';
-    stopMotionScroll();
-    // unload removed (frees iframes / hls.js instances)
-    Object.keys(tiles).forEach(function (id) { if (state.active.indexOf(id) < 0) destroyTile(id); });
-    // load new
-    state.active.forEach(function (id) { if (!tiles[id] && byId[id]) createTile(byId[id]); });
+    teardownMotion();   // disconnect the wall's observer & free its embeds
+    if (state.layout === 'single') {
+      // keep ONLY the primary channel loaded — a true single-channel view that
+      // wastes no bandwidth on the streams you're not watching
+      var pid = currentPrimaryId();
+      Object.keys(tiles).forEach(function (id) { if (id !== pid) destroyTile(id); });
+      if (pid && byId[pid] && !tiles[pid]) createTile(byId[pid]);
+    } else {
+      // grid / focus: unload removed (frees iframes / hls.js instances), load new
+      Object.keys(tiles).forEach(function (id) { if (state.active.indexOf(id) < 0) destroyTile(id); });
+      state.active.forEach(function (id) { if (!tiles[id] && byId[id]) createTile(byId[id]); });
+    }
     applyLayout();
     $('#empty').style.display = state.active.length ? 'none' : 'flex';
     $('#grid').style.display = state.active.length ? 'grid' : 'none';
     updateChromeLabels();
+    updateSingleControls();
   }
 
-  /* ---- Motion: auto-scrolling browse wall (MusicGrid-style) ---- */
+  /* ---- Motion: auto-scrolling wall where the channel STREAMS play in-place.
+     Embeds are mounted lazily as a card scrolls into view (and torn down when
+     it leaves), so even a 100+ channel wall only ever runs the on-screen few. */
   var motionTimer = null;
+  var motionIO = null;     // IntersectionObserver driving the lazy play/pause
   function motionPool() {
     var pool = allChannels();
     if (!state.motionAll) pool = pool.filter(function (c) { return state.active.indexOf(c.id) >= 0; });
@@ -649,46 +701,105 @@
     if (i >= 0) state.active.splice(i, 1); else state.active.push(id);
     persistActive(); syncHash();
     renderActiveStrip(); updateChromeLabels(); updateDiag();
+    var on = state.active.indexOf(id) >= 0;
     var r = document.querySelector('.chan[data-id="' + id + '"]');
-    if (r) { var on = state.active.indexOf(id) >= 0; r.classList.toggle('active', on); r.setAttribute('aria-pressed', on ? 'true' : 'false'); }
+    if (r) { r.classList.toggle('active', on); r.setAttribute('aria-pressed', on ? 'true' : 'false'); }
+    // reflect on-air state across every card for this channel (the wall dupes them)
+    document.querySelectorAll('#motionGrid .m-card[data-id="' + id + '"]').forEach(function (c) {
+      c.classList.toggle('on', on);
+      var add = $('.m-add', c); if (add) add.textContent = on ? '✓ On air' : '＋ Add';
+      var st = $('.m-state', c); if (st) st.textContent = on ? '● ON AIR' : '▶ PLAY';
+    });
   }
   function buildMotionCard(ch) {
     var on = state.active.indexOf(ch.id) >= 0;
     var card = el('div', 'm-card' + (on ? ' on' : ''));
     card.dataset.id = ch.id;
-    card.setAttribute('role', 'button'); card.tabIndex = 0;
-    card.setAttribute('aria-label', ch.name + ' — click to ' + (on ? 'remove from' : 'add to') + ' wall');
     card.innerHTML =
-      '<div class="m-poster" style="background:hsl(' + hueOf(ch.name) + ',45%,30%)">' +
+      '<div class="m-media"><div class="m-poster" style="background:hsl(' + hueOf(ch.name) + ',45%,28%)">' +
         (ch.logo ? '<img src="' + esc(ch.logo) + '" alt="" loading="lazy" onerror="this.remove()">' : '<span>' + esc(initials(ch.name)) + '</span>') +
+      '</div></div>' +
+      '<div class="m-overlay">' +
+        '<div class="m-bar">' +
+          '<span class="m-nm">' + esc(ch.name) + '</span>' +
+          '<button class="m-pop" title="Open source in a new tab" aria-label="Open ' + esc(ch.name) + ' source in a new tab">↗</button>' +
+        '</div>' +
+        '<div class="m-foot">' +
+          '<button class="m-add" aria-label="' + (on ? 'Remove ' : 'Add ') + esc(ch.name) + (on ? ' from' : ' to') + ' your wall">' + (on ? '✓ On air' : '＋ Add') + '</button>' +
+        '</div>' +
       '</div>' +
-      '<div class="m-info"><div class="m-nm">' + esc(ch.name) + '</div><div class="m-ds">' + esc(ch.desc || '') + '</div></div>' +
       (ch.note ? '<span class="m-badge">' + esc(ch.note) + '</span>' : '') +
       '<span class="m-state">' + (on ? '● ON AIR' : '▶ PLAY') + '</span>';
-    function act() {
+    $('.m-add', card).addEventListener('click', function (e) {
+      e.stopPropagation();
       motionToggle(ch.id);
-      var nowOn = state.active.indexOf(ch.id) >= 0;
-      card.classList.toggle('on', nowOn);
-      $('.m-state', card).textContent = nowOn ? '● ON AIR' : '▶ PLAY';
-      toast((nowOn ? 'Added ' : 'Removed ') + ch.name + ' · switch to Grid/Focus to watch');
-    }
-    card.addEventListener('click', act);
-    card.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); act(); } });
+      toast((state.active.indexOf(ch.id) >= 0 ? 'Added ' : 'Removed ') + ch.name + ' · switch to Single/Grid/Focus to watch');
+    });
+    $('.m-pop', card).addEventListener('click', function (e) { e.stopPropagation(); window.open(sourceLink(ch), '_blank', 'noopener'); });
     return card;
   }
+  // Mount a live embed into a card (called by the observer when it nears view)
+  function mountMotionMedia(card) {
+    if (card._media || !card.isConnected) return;   // skip cards detached by a torn-down render
+    var ch = byId[card.dataset.id]; if (!ch) return;
+    var holder = $('.m-media', card); if (!holder) return;
+    var media;
+    if (ch.provider === 'hls') {
+      media = el('video');
+      media.muted = true; media.autoplay = true; media.setAttribute('playsinline', ''); media.title = ch.name;
+      attachHls(media, ch.source);
+    } else {
+      media = el('iframe');
+      media.src = embedUrl(ch, true);   // always muted: autoplay policy + many at once
+      media.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture');
+      media.setAttribute('referrerpolicy', 'origin-when-cross-origin');
+      media.setAttribute('tabindex', '-1');
+      if (ch.provider === 'iframe') media.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-presentation');
+      media.title = ch.name;
+    }
+    card._media = media;
+    card.classList.add('playing');
+    holder.appendChild(media);
+  }
+  function unmountMotionMedia(card) {
+    var media = card._media; if (!media) return;
+    card._media = null;
+    card.classList.remove('playing');
+    if (media.tagName === 'VIDEO') { media._dead = true; if (media._hls) { try { media._hls.destroy(); } catch (e) {} media._hls = null; } }
+    media.remove();
+  }
+  function teardownMotion() {
+    stopMotionScroll();
+    if (motionIO) { motionIO.disconnect(); motionIO = null; }
+    var mg = $('#motionGrid');
+    if (mg) mg.querySelectorAll('.m-card').forEach(unmountMotionMedia);
+  }
   function renderMotion() {
+    teardownMotion();
     var mg = $('#motionGrid'); mg.innerHTML = '';
     var pool = motionPool();
     if (!pool.length) { mg.innerHTML = '<div class="motion-empty">Nothing on air yet. Switch the source to “All” to browse every channel.</div>'; return; }
-    var cell = 180;
-    var cols = Math.max(1, Math.floor((mg.clientWidth || window.innerWidth) / cell));
-    var rows = Math.max(1, Math.ceil((mg.clientHeight || window.innerHeight) / cell));
-    var need = Math.max(48, cols * rows * 3);   // ~3 viewports of cards so it scrolls
+    var cellW = 240, cellH = 150;   // ~matches the CSS grid track sizes
+    var cols = Math.max(1, Math.floor((mg.clientWidth || window.innerWidth) / cellW));
+    var rows = Math.max(1, Math.ceil((mg.clientHeight || window.innerHeight) / cellH));
+    var need = Math.max(20, cols * rows * 2);             // ~2 viewports so it scrolls
+    if (need > pool.length * 4) need = Math.max(pool.length, cols);  // don't over-dupe a tiny pool
     var s = shuffleArr(pool);
     var frag = document.createDocumentFragment();
     for (var i = 0; i < need; i++) { if (i > 0 && i % s.length === 0) s = shuffleArr(pool); frag.appendChild(buildMotionCard(s[i % s.length])); }
     mg.appendChild(frag);
     mg.scrollTop = 0;
+    var cards = mg.querySelectorAll('.m-card');
+    if ('IntersectionObserver' in window) {
+      var io = new IntersectionObserver(function (entries) {
+        if (motionIO !== io) return;   // ignore late callbacks from a replaced/torn-down observer
+        entries.forEach(function (e) { if (e.isIntersecting) mountMotionMedia(e.target); else unmountMotionMedia(e.target); });
+      }, { root: mg, rootMargin: '200px 0px', threshold: 0.01 });
+      motionIO = io;
+      cards.forEach(function (c) { io.observe(c); });
+    } else {
+      for (var j = 0; j < Math.min(cards.length, 8); j++) mountMotionMedia(cards[j]);   // no-IO fallback: just the first few
+    }
     startMotionScroll();
   }
   function startMotionScroll() {
@@ -733,9 +844,14 @@
   function toggleChannel(id) {
     if (!byId[id]) return;
     var i = state.active.indexOf(id);
-    if (i >= 0) state.active.splice(i, 1);
-    else state.active.push(id);
-    if (id === state.focusId && state.active.indexOf(id) < 0) state.focusId = state.active[0] || null;
+    if (i >= 0) {
+      state.active.splice(i, 1);
+      if (id === state.focusId) state.focusId = state.active[0] || null;
+    } else {
+      state.active.push(id);
+      // in single mode, jump straight to the channel you just turned on
+      if (state.layout === 'single') state.focusId = id;
+    }
     afterActiveChange();
   }
   function afterActiveChange() {
@@ -1051,7 +1167,7 @@
     [LS.custom, LS.hidden, LS.layout, LS.open].forEach(function (k) { localStorage.removeItem(k); });
     state.custom = []; state.hidden = []; state.openCats = new Set(); state.layout = 'grid'; state.focusId = null;
     state.focusAuto = false;
-    var fab = $('#focusAutoBtn'); if (fab) { fab.classList.remove('on'); fab.textContent = '⟳ Auto-rotate'; }
+    var fab = $('#focusAutoBtn'); if (fab) { fab.classList.remove('on'); fab.setAttribute('aria-pressed', 'false'); fab.textContent = '⟳ Auto-rotate'; }
     CATS = MV_CATALOG.categories.slice();
     rebuildIndex();
     // drop any on-air streams that no longer exist, then re-render the wall
@@ -1133,7 +1249,8 @@
       b.classList.toggle('active', on);
       b.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
-    document.body.classList.toggle('is-motion', state.layout === 'motion');
+    // Control-strip visibility is driven by the mode-* body classes that
+    // applyLayout()/renderGrid() set on every render (single source of truth).
   }
   function setMode(mode) {
     if (!MODES[mode]) return;
@@ -1142,8 +1259,10 @@
   }
   function setFocus(id) {
     state.focusId = id;
-    if (state.layout !== 'focus') setMode('focus');
-    else { applyLayout(); syncFocusRotate(); }   // restart the timer from this pick
+    // ★ keeps the current mode if it already has a primary (single/focus),
+    // otherwise it promotes the tile into Focus.
+    if (state.layout === 'focus' || state.layout === 'single') { applyLayout(); syncFocusRotate(); }
+    else setMode('focus');
   }
 
   /* ------------------------------------------------------------------ *
@@ -1202,11 +1321,17 @@
       $('#motionSource').textContent = state.motionAll ? 'All channels' : 'On air only';
       if (state.layout === 'motion') renderMotion();
     });
+    // single-mode channel stepper
+    $('#singlePrev').addEventListener('click', function () { stepSingle(-1); });
+    $('#singleNext').addEventListener('click', function () { stepSingle(1); });
+
     // focus auto-rotate
     $('#focusAutoBtn').addEventListener('click', function () {
       state.focusAuto = !state.focusAuto;
-      $('#focusAutoBtn').classList.toggle('on', state.focusAuto);
-      $('#focusAutoBtn').textContent = state.focusAuto ? '⟳ Auto-rotate: on' : '⟳ Auto-rotate';
+      var fab = $('#focusAutoBtn');
+      fab.classList.toggle('on', state.focusAuto);
+      fab.setAttribute('aria-pressed', state.focusAuto ? 'true' : 'false');
+      fab.textContent = state.focusAuto ? '⟳ Auto-rotate: on' : '⟳ Auto-rotate';
       syncFocusRotate();
       applyLayout();   // refresh the (auto) hint in the diag label
     });

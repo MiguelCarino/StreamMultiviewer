@@ -7,14 +7,19 @@ stream, arrange the grid, and share your exact wall with a link.
 Live: [tv.carino.systems](https://tv.carino.systems/) · part of [carino.systems](https://carino.systems/)
 
 ## Features
-- **Watch N streams at once**, with three layout modes:
+- **Watch N streams at once**, with four layout modes:
+  - **Single** — one channel full screen. Step through your on-air streams with
+    **‹ / ›**, or enable **⟳ Auto-rotate** to channel-surf (~60s). Only the
+    on-screen channel is loaded, so the rest use no bandwidth.
   - **Grid** (default) — fills the whole stage, every stream visible, **no scroll /
     no hidden overflow**, tiles sized as close to 16:9 as the viewport allows.
   - **Focus** — one big spotlight stream with the others wrapped around it in an
     **L (a column on the right + a row below)**. Click ★ on any tile to promote it,
     or enable **⟳ Auto-rotate** to cycle the spotlight through every stream (~60s).
-  - **Motion** — an auto-scrolling browse wall of every channel (MusicGrid-style);
-    click a card to add it to your wall. Pause/resume and All/On-air toggle.
+  - **Motion** — an auto-scrolling wall where the channel **streams play in place**.
+    Embeds are mounted lazily as each card scrolls into view (and torn down when it
+    leaves), so even a 100+ channel wall only runs the on-screen few. Click **＋ Add**
+    on any card to put it on your wall. Pause/resume and All/On-air toggle.
 - **Autoplay** — every tile autoplays (muted, per browser policy) the moment it loads.
 - **Dynamic load / unload** — a stream's `<iframe>`/`<video>` is created when you
   enable it and destroyed when you disable it, so off-air channels use no bandwidth.
