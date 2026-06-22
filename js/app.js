@@ -17,6 +17,7 @@
     remember: 'mv_remember',   // '1' | '0'
     layout:   'mv_layout',     // 'grid'|'focus'|'motion'
     open:     'mv_opencats',   // [catId,…]
+    live:     'mv_livecache',  // {channelId:{ts,live,videoId,title,thumb}} live-resolution cache
   };
   function lsGet(k, dflt) {
     try { var v = localStorage.getItem(k); return v == null ? dflt : JSON.parse(v); }
@@ -51,7 +52,30 @@
     query: '',
   };
   var tiles = {};               // id -> tile element (live iframes)
-  var liveCache = {};           // channelId -> {ts, live, videoId, title, thumb}
+  // Live-resolution cache. A search.list call costs 100 quota units (of a default
+  // 10,000/day), so we cache results — and PERSIST them to localStorage — to avoid
+  // re-burning quota on every reload. Entries older than LIVE_TTL are dropped on load.
+  var LIVE_TTL = 5 * 60 * 1000;
+  var liveCache = loadLiveCache();
+  var liveInflight = {};        // channelId -> Promise, dedupes concurrent lookups
+  function loadLiveCache() {
+    var raw = lsGet(LS.live, {}), out = {}, now = nowMs();
+    if (raw && typeof raw === 'object') {
+      Object.keys(raw).forEach(function (k) {
+        var e = raw[k];
+        if (e && typeof e.ts === 'number' && (now - e.ts) < LIVE_TTL) out[k] = e;
+      });
+    }
+    return out;
+  }
+  // new Date()/Date.now() are fine in the app (only the workflow sandbox forbids them);
+  // wrap so the call site reads intent.
+  function nowMs() { return Date.now(); }
+  var persistLiveTimer = null;
+  function persistLiveCache() {
+    clearTimeout(persistLiveTimer);
+    persistLiveTimer = setTimeout(function () { lsSet(LS.live, liveCache); }, 250);
+  }
 
   /* ------------------------------------------------------------------ *
    * Channel registry (seed + custom − hidden), indexed
@@ -217,18 +241,35 @@
 
   function getLiveInfo(channelId, force) {
     var c = liveCache[channelId];
-    var fresh = c && (Date.now() - c.ts) < 5 * 60 * 1000;
-    if (c && fresh && !force) return Promise.resolve(c);
+    var fresh = c && (nowMs() - c.ts) < LIVE_TTL;
+    if (c && fresh && !force) {
+      // A cached error means a prior lookup hit quota/failure — back off and don't
+      // re-spend 100 units every render until the entry expires.
+      return c.error ? Promise.reject(new Error(c.error)) : Promise.resolve(c);
+    }
     if (!apiReady()) return Promise.resolve(null);
-    return ytFetch('search?part=snippet&channelId=' + channelId + '&eventType=live&type=video&maxResults=1')
+    // Dedupe: many tiles (or a re-render) can ask for the same channel at once;
+    // issue a single search.list and share its promise.
+    if (liveInflight[channelId]) return liveInflight[channelId];
+    var p = ytFetch('search?part=snippet&channelId=' + channelId + '&eventType=live&type=video&maxResults=1')
       .then(function (j) {
         var it = j.items && j.items[0];
         var info = it
-          ? { ts: Date.now(), live: true, videoId: it.id.videoId, title: it.snippet.title, thumb: (it.snippet.thumbnails.medium || it.snippet.thumbnails.default).url }
-          : { ts: Date.now(), live: false };
+          ? { ts: nowMs(), live: true, videoId: it.id.videoId, title: it.snippet.title, thumb: (it.snippet.thumbnails.medium || it.snippet.thumbnails.default).url }
+          : { ts: nowMs(), live: false };
         liveCache[channelId] = info;
+        persistLiveCache();
         return info;
-      });
+      })
+      .catch(function (err) {
+        liveCache[channelId] = { ts: nowMs(), error: String(err && err.message || err) };
+        persistLiveCache();
+        throw err;
+      })
+      .then(function (v) { delete liveInflight[channelId]; return v; },
+            function (e) { delete liveInflight[channelId]; throw e; });
+    liveInflight[channelId] = p;
+    return p;
   }
 
   /* ------------------------------------------------------------------ *
@@ -353,7 +394,8 @@
     var badges = '';
     if (ch.note) badges += '<span class="badge note">' + esc(ch.note) + '</span>';
     var lc = liveCache[ch.source];
-    if (ch.provider === 'yt-channel' && lc) badges += lc.live ? '<span class="badge live">LIVE</span>' : '<span class="badge off">OFF</span>';
+    // only badge on a definitive result — skip error entries (unknown, not off)
+    if (ch.provider === 'yt-channel' && lc && !lc.error) badges += lc.live ? '<span class="badge live">LIVE</span>' : '<span class="badge off">OFF</span>';
 
     row.innerHTML =
       avatarHTML(ch) +
@@ -1136,7 +1178,7 @@
     closeModal('#settingsModal');
     updateDiag();
     toast('Settings saved');
-    if (changed && key) { liveCache = {}; renderGrid(); renderSidebar(); }
+    if (changed && key) { liveCache = {}; liveInflight = {}; lsSet(LS.live, {}); renderGrid(); renderSidebar(); }
   }
   function exportConfig() {
     var data = { version: 1, custom: state.custom, hidden: state.hidden, layout: state.layout, remember: state.remember };
