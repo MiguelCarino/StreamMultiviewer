@@ -1254,18 +1254,30 @@
   /* ------------------------------------------------------------------ *
    * Navbar clock + greeting + diagnostics
    * ------------------------------------------------------------------ */
+  var clockMode = 0; // 0 = local, 1 = UTC, 2 = epoch. Click clock to cycle.
+  var localTz = 'LOCAL';
+  try { localTz = Intl.DateTimeFormat().resolvedOptions().timeZone.split('/').pop() || 'LOCAL'; } catch (e) { localTz = 'LOCAL'; }
   function tick() {
     var d = new Date();
-    var hh = String(d.getHours()).padStart(2, '0');
-    var mm = String(d.getMinutes()).padStart(2, '0');
-    var ss = String(d.getSeconds()).padStart(2, '0');
-    var t = hh + ':' + mm + ':' + ss;
+    var p = function (n) { return String(n).padStart(2, '0'); };
+    var local = p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds());
+    var t, tz;
+    if (clockMode === 1)      { t = p(d.getUTCHours()) + ':' + p(d.getUTCMinutes()) + ':' + p(d.getUTCSeconds()); tz = 'UTC'; }
+    else if (clockMode === 2) { t = String(Math.floor(d.getTime() / 1000)); tz = 'EPOCH'; }
+    else                      { t = local; tz = localTz; }
     $('#clockLocal').textContent = t;
-    var dc = $('#diagClock'); if (dc) dc.textContent = t;
-    try { $('#tzName').textContent = Intl.DateTimeFormat().resolvedOptions().timeZone.split('/').pop() || 'LOCAL'; } catch (e) { $('#tzName').textContent = 'LOCAL'; }
+    var dc = $('#diagClock'); if (dc) dc.textContent = local;
+    $('#tzName').textContent = tz;
     var h = d.getHours();
     var g = h < 5 ? 'Burning the midnight oil.' : h < 12 ? 'Good morning.' : h < 18 ? 'Good afternoon.' : 'Good evening.';
     $('#greeting').textContent = g;
+  }
+  function wireClock() {
+    var box = document.querySelector('.header-clock');
+    if (!box) return;
+    box.style.cursor = 'pointer';
+    box.title = 'Click to toggle Local / UTC / Epoch';
+    box.addEventListener('click', function () { clockMode = (clockMode + 1) % 3; tick(); });
   }
   function updateDiag() {
     $('#diagActive').textContent = state.active.length;
@@ -1477,7 +1489,7 @@
     renderSidebar();
     renderGrid();
     updateDiag();
-    tick(); setInterval(tick, 1000);
+    tick(); setInterval(tick, 1000); wireClock();
     syncHash();
     wire();
   }
