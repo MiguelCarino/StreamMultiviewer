@@ -507,7 +507,7 @@
     if (loadHls._p) return loadHls._p;
     loadHls._p = new Promise(function (resolve) {
       var s = document.createElement('script');
-      s.src = 'https://cdn.jsdelivr.net/npm/hls.js@1.5.13/dist/hls.min.js';
+      s.src = 'vendor/hls/hls.min.js'; // hls.js 1.5.13, self-hosted (no external CDN)
       s.onload = function () { resolve(window.Hls); };
       s.onerror = function () { loadHls._p = null; resolve(null); }; // allow a later retry
       document.head.appendChild(s);

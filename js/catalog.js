@@ -45,6 +45,7 @@ window.MV_CATALOG = {
     { id: 'ukraine',       name: 'Ukraine',       flag: '🇺🇦' },
     { id: 'israel',        name: 'Israel',        flag: '🇮🇱' },
     { id: 'portugal',      name: 'Portugal',      flag: '🇵🇹' },
+    { id: 'poland',        name: 'Poland',        flag: '🇵🇱' },
     { id: 'netherlands',   name: 'Netherlands',   flag: '🇳🇱' },
     { id: 'greece',        name: 'Greece',        flag: '🇬🇷' },
     { id: 'philippines',   name: 'Philippines',   flag: '🇵🇭' },
@@ -69,6 +70,13 @@ window.MV_CATALOG = {
     { id: 'int09', name: 'Al Jazeera English',    desc: 'Al Jazeera Media Network',   category: 'international', logo: 'logos/int09.webp', provider: 'yt-channel', source: 'UCNye-wNBqNL5ZzHSJj3l8Bg' },
     { id: 'int10', name: 'Agenda-Free TV',        desc: 'Independent',                category: 'international', logo: 'logos/int10.webp', provider: 'yt-channel', source: 'UCshCsg1YVKli8yBai-wa78w', note: 'Breaking news only' },
     { id: 'int11', name: 'WION',                  desc: 'Essel Group — India',        category: 'international', logo: 'logos/int11.webp', provider: 'yt-channel', source: 'UC_gUM8rL-Lrg6O3adPW9K1g' },
+    { id: 'int12', name: 'NHK World-Japan',       desc: 'NHK — Japan',                category: 'international', logo: '', provider: 'yt-channel', source: 'UCSPEjw8F2nQDtmUKPFNF7_A' },
+    { id: 'int13', name: 'CNBC International',     desc: 'CNBC — business',            category: 'international', logo: '', provider: 'yt-channel', source: 'UCo7a6riBFJ3tkeHjvkXPn1g', note: 'Not 24/7' },
+    { id: 'int14', name: 'Al Jazeera Arabic',     desc: 'الجزيرة — Al Jazeera',        category: 'international', logo: '', provider: 'yt-channel', source: 'UCfiwzLy-8yKzIbsmZTzxDgw' },
+    { id: 'hls01', name: 'DW English (HLS)',      desc: 'Deutsche Welle — direct HLS', category: 'international', logo: '', provider: 'hls', source: 'https://dwamdstream102.akamaized.net/hls/live/2015525/dwstream102/index.m3u8' },
+    { id: 'hls04', name: 'TRT World (HLS)',       desc: 'TRT — direct HLS',           category: 'international', logo: '', provider: 'hls', source: 'https://tv-trtworld.medya.trt.com.tr/master.m3u8' },
+    { id: 'hls05', name: 'Red Bull TV (HLS)',     desc: 'Red Bull Media House',       category: 'international', logo: '', provider: 'hls', source: 'https://rbmn-live.akamaized.net/hls/live/590964/BoRB-AT/master.m3u8' },
+    { id: 'hls08', name: 'Euronews (HLS)',        desc: 'Euronews English — direct HLS', category: 'international', logo: '', provider: 'hls', source: 'https://cdn-euronews.akamaized.net/live/eds/euronews-en/25080/index.m3u8' },
 
     /* ---- United States ---- */
     { id: 'usa01', name: 'NBC News',              desc: 'NBCUniversal',               category: 'usa', logo: 'logos/usa01.webp', provider: 'yt-channel', source: 'UCeY0bbntWzzVIaj2z3QigXg' },
@@ -78,6 +86,7 @@ window.MV_CATALOG = {
 
     /* ---- United Kingdom ---- */
     { id: 'uk01',  name: 'GB News',               desc: "Britain's News Channel",     category: 'uk',  logo: 'logos/uk01.webp',  provider: 'yt-channel', source: 'UC0vn8ISa4LKMunLbzaXLnOQ' },
+    { id: 'uk02',  name: 'Channel 4 News',        desc: 'ITN — Channel 4',            category: 'uk',  logo: '', provider: 'yt-channel', source: 'UCTrQ7HXWRRxr7OsOtodr2_w', note: 'Not 24/7' },
 
     /* ---- Argentina ---- */
     { id: 'arg01', name: 'A24',                   desc: 'Grupo América',              category: 'argentina', logo: 'logos/arg01.webp', provider: 'yt-channel', source: 'UCR9120YBAqMfntqgRTKmkjQ' },
@@ -123,6 +132,7 @@ window.MV_CATALOG = {
     { id: 'jap08', name: 'MBS NEWS',              desc: 'Mainichi Broadcasting',      category: 'japan', logo: 'logos/jap08.webp', provider: 'yt-channel', source: 'UCUVWoy_rGPdZeUp7jjRHOaQ' },
     { id: 'jap11', name: 'Weathernews',           desc: 'Weathernews Inc.',           category: 'japan', logo: 'logos/jap11.webp', provider: 'yt-channel', source: 'UCWnOKASPkCBEL-_O8odMvtg' },
     { id: 'jap09', name: 'Earthquake Alert',      desc: 'Live seismic monitor',       category: 'japan', logo: 'logos/jap09.webp', provider: 'yt-channel', source: 'UCNsidkYpIAQ4QaufptQBPHQ' },
+    { id: 'hls03', name: 'NHK World-Japan (HLS)', desc: 'NHK — direct HLS',           category: 'japan', logo: '', provider: 'hls', source: 'https://media-tyo.hls.nhkworld.jp/hls/w/live/master.m3u8' },
 
     /* ---- South Korea ---- */
     { id: 'kor01', name: 'YTN',                   desc: 'YTN — Korean news',          category: 'korea', logo: '', provider: 'yt-channel', source: 'UCizGMtU0Lt-O9X0tLJzyZ2Q' },
@@ -139,9 +149,17 @@ window.MV_CATALOG = {
     { id: 'usa07', name: 'Bloomberg Television',  desc: 'Bloomberg L.P. — finance',   category: 'usa', logo: '', provider: 'yt-channel', source: 'UCIALMKvObZNtJ6AmdCLP7Lg' },
     { id: 'usa08', name: 'FOX Weather',           desc: 'Fox Corporation',            category: 'usa', logo: '', provider: 'yt-channel', source: 'UC1FbPiXx59_ltnFVx7IxWow' },
     { id: 'usa09', name: 'Newsmax',               desc: 'Newsmax Media',              category: 'usa', logo: '', provider: 'yt-channel', source: 'UCx6h-dWzJ5NpAlja1YsApdg' },
+    { id: 'usa10', name: 'PBS NewsHour',          desc: 'PBS — public broadcaster',   category: 'usa', logo: '', provider: 'yt-channel', source: 'UC6ZFN9Tx6xh-skXCuRHCDpQ', note: 'Not 24/7' },
+    { id: 'usa11', name: 'C-SPAN',                desc: 'US Congress — live',         category: 'usa', logo: '', provider: 'yt-channel', source: 'UCb--64Gl51jIEVE-GLDAVTg', note: 'Not 24/7' },
+    { id: 'usa12', name: 'CNBC Television',       desc: 'CNBC — US markets',          category: 'usa', logo: '', provider: 'yt-channel', source: 'UCrp_UI8XtuYfpiqluWLD7Lw', note: 'Not 24/7' },
+    { id: 'usa13', name: 'Scripps News',          desc: 'The E.W. Scripps Company',   category: 'usa', logo: '', provider: 'yt-channel', source: 'UCTln5ss6h6L_xNfMeujfPbg' },
+    { id: 'usa14', name: 'Cheddar',               desc: 'Cheddar — business',         category: 'usa', logo: '', provider: 'yt-channel', source: 'UC04KsGq3npibMCE9Td3mVDg', note: 'Not 24/7' },
+    { id: 'hls06', name: 'Bloomberg TV (HLS)',    desc: 'Bloomberg — direct HLS',     category: 'usa', logo: '', provider: 'hls', source: 'https://www.bloomberg.com/media-manifest/streams/us.m3u8' },
 
     /* ---- South Korea (more) ---- */
     { id: 'kor02', name: 'Arirang News',          desc: 'Arirang TV — Korea',         category: 'korea', logo: '', provider: 'yt-channel', source: 'UCzznO4xSV8BKnUBPyswtCUw' },
+    { id: 'kor03', name: 'KBS News',              desc: 'KBS 뉴스24 — 24/7',           category: 'korea', logo: '', provider: 'yt-channel', source: 'UCcQTRi69dsVYHN3exePtZ1A' },
+    { id: 'kor04', name: 'SBS News',              desc: 'Seoul Broadcasting System',  category: 'korea', logo: '', provider: 'yt-channel', source: 'UCkinYTS9IHqOEwR1Sze2JTw' },
 
     /* ---- France ---- */
     { id: 'fr01', name: 'FRANCE 24 English',      desc: 'France Médias Monde',        category: 'france', logo: '', provider: 'yt-channel', source: 'UCQfwfsi5VrQ8yKZ-UWmAEFg' },
@@ -149,6 +167,7 @@ window.MV_CATALOG = {
     { id: 'fr03', name: 'FRANCE 24 Español',      desc: 'France Médias Monde',        category: 'france', logo: '', provider: 'yt-channel', source: 'UCUdOoVWuWmgo1wByzcsyKDQ' },
     { id: 'fr04', name: 'franceinfo',             desc: 'France Télévisions',         category: 'france', logo: '', provider: 'yt-channel', source: 'UCO6K_kkdP-lnSCiO3tPx7WA' },
     { id: 'fr05', name: 'BFMTV',                  desc: 'Altice / RMC BFM',           category: 'france', logo: '', provider: 'yt-channel', source: 'UCXwDLMDV86ldKoFVc_g8P0g' },
+    { id: 'hls09', name: 'Euronews Français (HLS)', desc: 'Euronews — direct HLS',     category: 'france', logo: '', provider: 'hls', source: 'https://cdn-euronews.akamaized.net/live/eds/euronews-fr/25026/index.m3u8' },
 
     /* ---- Spain ---- */
     { id: 'es01', name: 'RTVE 24h',               desc: 'RTVE — Canal 24 Horas',      category: 'spain', logo: '', provider: 'yt-channel', source: 'UC7QZIf0dta-XPXsp9Hv4dTw' },
@@ -196,6 +215,8 @@ window.MV_CATALOG = {
     { id: 'de01', name: 'euronews (deutsch)',     desc: 'Euronews — German',          category: 'germany', logo: '', provider: 'yt-channel', source: 'UCACdxU3VrJIJc7ujxtHWs1w' },
     { id: 'de02', name: 'ZDFheute',               desc: 'ZDF',                        category: 'germany', logo: '', provider: 'yt-channel', source: 'UCeqKIgPQfNInOswGRWt48kQ', note: 'Not 24/7' },
     { id: 'de03', name: 'phoenix',                desc: 'ARD / ZDF',                  category: 'germany', logo: '', provider: 'yt-channel', source: 'UCwyiPnNlT8UABRmGmU0T9jg', note: 'Not 24/7' },
+    { id: 'de04', name: 'WELT',                   desc: 'Axel Springer — 24/7',       category: 'germany', logo: '', provider: 'yt-channel', source: 'UCYLksysPyWbObO2GKlqtKpA' },
+    { id: 'hls02', name: 'DW Deutsch (HLS)',      desc: 'Deutsche Welle — direct HLS', category: 'germany', logo: '', provider: 'hls', source: 'https://dwamdstream103.akamaized.net/hls/live/2015526/dwstream103/index.m3u8' },
 
     /* ---- Ukraine ---- */
     { id: 'ua01', name: 'FREEDOM. LIVE',          desc: 'FREEDOM — intl. Ukrainian',  category: 'ukraine', logo: '', provider: 'yt-channel', source: 'UCOqFkpNwNLPGOb8EC-mwZYg' },
@@ -210,6 +231,9 @@ window.MV_CATALOG = {
     { id: 'pt01', name: 'SIC Notícias',           desc: 'SIC',                        category: 'portugal', logo: '', provider: 'yt-channel', source: 'UCimBp0frQrASSsIFERs8vsw', note: 'Not 24/7' },
     { id: 'pt02', name: 'RTP',                     desc: 'Rádio e TV de Portugal',     category: 'portugal', logo: '', provider: 'yt-channel', source: 'UCWPpeeDOykyH5ducPITCDPw', note: 'Not 24/7' },
     { id: 'pt03', name: 'CNN Portugal',           desc: 'Media Capital',              category: 'portugal', logo: '', provider: 'yt-channel', source: 'UCbiirstEB3KnKhm7i91dKYg', note: 'Not 24/7' },
+
+    /* ---- Poland ---- */
+    { id: 'pl01',  name: 'TVP World',             desc: 'TVP — English',              category: 'poland', logo: '', provider: 'yt-channel', source: 'UCBjUPsHj7bXt24SUWNoZ0zA' },
 
     /* ---- Netherlands ---- */
     { id: 'nl01', name: 'NOS',                    desc: 'Dutch public broadcaster',   category: 'netherlands', logo: '', provider: 'yt-channel', source: 'UC5xziMuoFAOpX9mwUVhe2Jw', note: 'Not 24/7' },
@@ -227,12 +251,14 @@ window.MV_CATALOG = {
     /* ---- Australia ---- */
     { id: 'au01', name: 'ABC News (Australia)',   desc: 'ABC — public broadcaster',   category: 'australia', logo: '', provider: 'yt-channel', source: 'UCVgO39Bk5sMo66-6o6Spn6Q' },
     { id: 'au02', name: 'Sky News Australia',     desc: 'Sky News Australia',         category: 'australia', logo: '', provider: 'yt-channel', source: 'UCO0akufu9MOzyz3nvGIXAAw' },
+    { id: 'hls07', name: 'ABC News AU (HLS)',     desc: 'ABC Australia — direct HLS',  category: 'australia', logo: '', provider: 'hls', source: 'https://abc-news-dmd-streams-1.akamaized.net/out/v1/abc83881886746b0802dc3e7ca2bc792/index.m3u8' },
 
     /* ---- Africa (more) ---- */
     { id: 'afr02', name: 'Channels Television',   desc: 'Nigeria',                    category: 'africa', logo: '', provider: 'yt-channel', source: 'UCEXGDNclvmg6RW0vipJYsTQ' },
     { id: 'afr03', name: 'TVC News',              desc: 'Nigeria',                    category: 'africa', logo: '', provider: 'yt-channel', source: 'UCgp4A6I8LCWrhUzn-5SbKvA' },
     { id: 'afr04', name: 'Arise News',            desc: 'Nigeria / global',           category: 'africa', logo: '', provider: 'yt-channel', source: 'UCyEJX-kSj0kOOCS7Qlq2G7g' },
     { id: 'afr05', name: 'SABC News',             desc: 'South Africa',               category: 'africa', logo: '', provider: 'yt-channel', source: 'UC8yH-uI81UUtEMDsowQyx1g' },
+    { id: 'afr06', name: 'eNCA',                  desc: 'South Africa — 24/7',        category: 'africa', logo: '', provider: 'yt-channel', source: 'UCI3RT5PGmdi1KVp9FG_CneA' },
 
     /* ---- Weather ---- */
     { id: 'we01', name: "Ryan Hall, Y'all",       desc: 'US weather radar & alerts',  category: 'weather', logo: '', provider: 'yt-channel', source: 'UCJHAT3Uvv-g3I8H3GhHWV7w' },
