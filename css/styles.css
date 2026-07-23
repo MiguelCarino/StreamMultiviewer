@@ -72,6 +72,11 @@ a { color: inherit; }
 .header-left  { display: flex; align-items: center; gap: 22px; min-width: 0; }
 .header-right { display: flex; align-items: center; gap: 12px; }
 
+/* Control-Room toggle — lives in the navbar (like netplan/network's ☰) so the
+   drawer is opened from the top bar on every screen size. z-index of the header
+   keeps it above the overlay drawer on mobile. */
+.header-left .sb-toggle { margin-right: -10px; }
+
 .brand-name {
   font-family: var(--display);
   font-size: 1.7rem; font-weight: 900; line-height: 1;
@@ -289,11 +294,12 @@ body.sidebar-collapsed .sidebar { margin-left: calc(var(--sidebar-w) * -1); }
   flex-shrink: 0; height: 48px; display: flex; align-items: center; gap: 10px;
   padding: 0 14px; border-bottom: 1px solid var(--border); background: var(--bg-panel);
 }
-.toolbar .sb-toggle {
+.sb-toggle {
   width: 34px; height: 34px; border: 1px solid var(--border); background: var(--bg-elev);
   border-radius: 6px; color: var(--text); cursor: pointer; font-size: 1rem; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center; line-height: 1;
 }
-.toolbar .sb-toggle:hover { border-color: var(--accent); color: var(--accent); }
+.sb-toggle:hover { border-color: var(--accent); color: var(--accent); }
 .toolbar .spacer { flex: 1; }
 .toolbar .tb-label { font-family: var(--mono); font-size: .66rem; letter-spacing: .1em; text-transform: uppercase; color: var(--text-muted); }
 
